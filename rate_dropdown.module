@@ -1,0 +1,124 @@
+
+<?php
+/**
+ * @file
+ * rate_dropdown
+ *
+ *  - Provide a drop-down select Rate widget, using a CTools jump list.
+ *
+ */
+
+define('RATE_DROPDOWN_SHOW_RESULTS', TRUE);
+
+
+/* Implement hook_theme(). */
+function rate_dropdown_theme() {
+  return array(
+      'rate_template_rate_dropdown' => array(
+      'variables' => array(
+        'links' => NULL,
+        'results' => NULL,
+        'mode' => NULL,
+        'just_voted' => FALSE,
+        'content_type' => NULL,
+        'content_id' => NULL,
+        'display_options' => NULL,
+      ),
+      'template' => 'rate_dropdown',
+      'path' => drupal_get_path('module', 'rate_dropdown') . '/templates/rate_dropdown',
+    ),
+  );
+}
+
+/**
+ * Preprocess function for the thumbs_up_down template.
+ */
+function rate_dropdown_preprocess_rate_template_rate_dropdown(&$variables) {
+  extract($variables);
+
+  foreach ($links as $idx => $link) {
+    $options[$idx] = $link['text'];
+    $targets[$idx] = $link['href'];
+  }
+
+  // Build the CTools jump list
+  $variables['jump'] = '';
+  $targets = array_map('_rate_dropdown_split_url', $targets);  
+  $urls = array_combine($targets, $options);
+  // Do not show this if the user cannot vote...
+  if (count($urls) == count($variables['links'])) {
+    $variables['jump'] = rate_dropdown_jumplist($urls);
+  }
+
+  $info = array();
+  if ($mode == RATE_CLOSED) {
+    $info[] = t('Voting is closed.');
+  }
+  if ($mode != RATE_COMPACT && $mode != RATE_COMPACT_DISABLED) {
+    if (isset($results['user_vote'])) {
+      $info[] = t('You voted \'@option\'.', array('@option' => t($results['user_vote'])));
+    }
+  }
+  $variables['info'] = implode(' ', $info);
+
+  // Results display for admin
+  $admin_results = '';
+  if (RATE_DROPDOWN_SHOW_RESULTS && user_access('view rate results page')) {
+    $total_votes = 0;
+    foreach ($results['options'] as $option_value => $count) {
+      if (array_key_exists($option_value, $variables['links'])) {
+        $admin_results .= t('@option: @votes', array('@option' => $variables['links'][$option_value]['text'], '@votes' => $count)) . '<br />';
+      }
+      $total_votes += $count;
+    }
+    if (!empty($admin_results)) {
+      drupal_add_library('system', 'drupal.collapse');
+      $output  = '<fieldset class="collapsible collapsed">';
+      $output .= '<legend><span class="fieldset-legend">' . t('Results (@total)', array('@total' => $total_votes)) . '</span></legend>';
+      $output .= '<div class="fieldset-wrapper">' . $admin_results;
+      $output .= '</div></fieldset>';
+      $admin_results = $output;
+    }
+  }
+  $variables['admin_results'] = $admin_results;
+}
+
+function rate_dropdown_jumplist($urls) {
+  $output = '';
+  if (!empty($urls)) {
+    ctools_include('jump-menu');
+    $form_state = array();
+    $form = ctools_jump_menu(array(), $form_state, $urls, array());
+    $output .= drupal_render($form);
+  }
+  return $output;
+}
+
+
+/* Implement hook_rate_templates() */
+function rate_dropdown_rate_templates() {
+  $templates = array();
+
+  $templates['rate_dropdown'] = new stdClass();
+  $templates['rate_dropdown']->value_type = 'option';
+  $templates['rate_dropdown']->theme = 'rate_template_rate_dropdown';
+  //$templates['rate_dropdown']->css = drupal_get_path('module', 'rate_dropdown') . '/templates/rate_dropdown/rate_dropdown.css';
+  //$templates['rate_dropdown']->js = drupal_get_path('module', 'rate_dropdown') . '/templates/rate_dropdown/rate_dropdown.js';
+  $templates['rate_dropdown']->customizable = TRUE;
+  $templates['rate_dropdown']->translate = TRUE;
+  $templates['rate_dropdown']->template_title = t('Drop-down');
+
+  return $templates;
+}
+
+function _rate_dropdown_split_url($url, $return_url = TRUE) {
+  if (!empty($url)) {
+    $options = drupal_parse_url($url);
+    if ($return_url) {
+      return url($options['path'], $options);
+    }
+    else {
+      return array('path' => $options['path'], $options);
+    }
+  }
+}
