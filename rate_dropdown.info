@@ -1,0 +1,7 @@
+name = Rate drop-down widget
+description = "Provides a drop-down select widget for Rate."
+core = 7.x
+package = Voting
+
+dependencies[] = rate
+dependencies[] = ctools
