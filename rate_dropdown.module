@@ -1,10 +1,7 @@
-
 <?php
 /**
  * @file
- * rate_dropdown
- *
- *  - Provide a drop-down select Rate widget, using a CTools jump list.
+ * Provides a drop-down select Rate widget using a CTools jump list.
  *
  */
 
