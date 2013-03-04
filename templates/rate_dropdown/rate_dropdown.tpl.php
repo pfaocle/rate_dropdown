@@ -1,8 +1,7 @@
 <?php
-
 /**
  * @file
- * Rate Drop-down widget theme
+ * Rate Drop-down widget template.
  */
 
 if ($jump) {
