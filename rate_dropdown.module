@@ -28,7 +28,7 @@ function rate_dropdown_theme() {
 }
 
 /**
- * Preprocess function for the thumbs_up_down template.
+ * Preprocess function for the rate_dropdown template.
  */
 function rate_dropdown_preprocess_rate_template_rate_dropdown(&$variables) {
   extract($variables);
